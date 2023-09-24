@@ -15,12 +15,9 @@ import threading
 import time
 import logging
 
-# Set up logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler("bot_log.txt", mode='a', encoding='utf-8'),
-                              logging.StreamHandler()])
-
+# Initialize logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -84,11 +81,11 @@ class FileChangeHandler(FileSystemEventHandler):
                     document_text = extract_text_from_docx(event.src_path)
                 
                 if document_text:
-                    logging.info(f"Fetching information from {event.src_path}")
+                    logger.info(f"Fetching information from {event.src_path}")
                     document_embedding = self.embedding_function.embed_text(document_text)
                     self.collection.add(documents=[document_text], embeddings=[document_embedding], metadatas=[{"file_path": event.src_path}])
             except Exception as e:
-                logging.error(f"Error processing file {event.src_path}: {e}")
+                logger.error(f"Error processing file {event.src_path}: {e}")
                 print(f"Error processing file {event.src_path}: {e}")
 
     def on_deleted(self, event):
@@ -146,6 +143,10 @@ def main():
             n_results=2
         )
 
+        # Log when fetching from documents
+        if results and results.get('documents'):
+            logger.info(f"Fetched information from documents for query: {input_text}")
+
         # append the query result into the messages
         for res in results['documents'][0]:
             messages.append({"role": "user", "content": f"previous chat: {res}"})
@@ -174,3 +175,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
